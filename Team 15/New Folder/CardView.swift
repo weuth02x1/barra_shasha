@@ -1,36 +1,34 @@
 import SwiftUI
 
+// MARK: - CardView
 struct CardView: View {
+    // الفئة المختارة قادمة من الهوم
+    let category: String
+
+    // نستخدمها للرجوع (بدل زر Back الافتراضي)
+    @Environment(\.dismiss) private var dismiss
+
     // MARK: - Theme & Assets
     private let brandGreen = Color(red: 129/255, green: 204/255, blue: 187/255) // #81CCBB
     private let bgImageName = "background"
-    private let bowlImageName = "food"   // ← اسم صورة الأكل عندك
-    private let catImageName  = "Cat"    // ← اسم صورة القطة عندك
+    private let bowlImageName = "food"   // ← غيّريها حسب أصولك
+    private let catImageName  = "Cat"    // ← غيّريها حسب أصولك
     private let homeImageName = "home"
 
-    // MARK: - Tasks (مثال)
-    private let allTasks: [String] = [
-        "🚶 امشِ حول البيت 7 دقائق",
-        "🎨 ارسم بشكل عشوائي",
-        "🙃 قل اسمك بالعكس 5 مرات",
-        "📚 اقرأ 3 صفحات من كتاب",
-        "🧩 كوّن شكل من أشياء الغرفة",
-        "🧘‍♀️ ثبّت وضعية توازن 30 ثانية",
-        "🥤 اشرب كوب ماء بتركيز",
-        "🧺 ساعد في ترتيب ركن صغير",
-        "🐱 قلد صوت حيوان مضحك 10 مرات",
-        "🎬 امثل مشهد درامي 15 ثانية"
-    ]
+    // مهام هذه الفئة من القاموس المشترك
+    private var allTasksForCategory: [String] {
+        tasksByCategory[category] ?? []
+    }
 
     // MARK: - State
     private let dailyLimit = 5
     @State private var todaysTasks: [String] = []
-    @State private var currentIndex: Int = 0       // مؤشر المهمة المعروضة
-    @State private var completed: Int = 0          // المنجَز من 5
+    @State private var currentIndex: Int = 0
+    @State private var completed: Int = 0
 
     // مفاتيح الأنيميشن لحركة “شِمّة فليب”
-    @State private var taskKey: UUID = .init()     // لتبديل النص
-    @State private var flipPhase: Double = 0       // 0 → 1 → 0
+    @State private var taskKey: UUID = .init()
+    @State private var flipPhase: Double = 0 // 0 → 1 → 0
 
     var body: some View {
         ZStack {
@@ -39,25 +37,26 @@ struct CardView: View {
 
             VStack(spacing: 14) {
 
-                // شريط علوي
+                // شريط علوي (سهمك أنت + Home)
                 HStack {
-                    topButton(system: "chevron.backward") { /* رجوع */ }
+                    topButton(system: "chevron.backward") { dismiss() } // يرجع فعلياً
                     Spacer()
-                    topButtonImage(name: homeImageName) { /* الرئيسية */ }
+                    topButtonImage(name: homeImageName) { dismiss() }     // أو قدميه لاحقاً لهوم حقيقية
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
 
-                // ===== العداد فوق شريط المشي =====
-                HStack {
-                    Spacer()
-                    Text("\(completed)/\(dailyLimit)")
-                        .font(.headline).bold().foregroundStyle(.white)
-                    Spacer()
-                }
-                .padding(.top, 4)
+                // عنوان الفئة
+                Text("مهام \(category)")
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.95))
 
-                // ===== شريط المشي (خط واحد متصل) + القطة =====
+                // العداد
+                Text("\(completed)/\(dailyLimit)")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.95))
+
+                // شريط المسار + القطة
                 ProgressRowSolid(
                     completed: completed,
                     totalSteps: dailyLimit,
@@ -67,22 +66,18 @@ struct CardView: View {
 
                 Spacer()
 
-                // ===== الكارد =====
+                // الكارد
                 if let task = currentTask {
-                    // ميلان خفيف للكارد (شِمّة فليب): 0→1→0
-                    let tiltDegrees = sin(flipPhase * .pi) * 12       // ذروة 12°
-                    let scale = 1 - 0.02 * sin(flipPhase * .pi)       // تصغير خفي جداً
+                    let tiltDegrees = sin(flipPhase * .pi) * 12
+                    let scale = 1 - 0.02 * sin(flipPhase * .pi)
 
                     ZStack {
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 22)
-                                    .stroke(Color.white.opacity(0.55), lineWidth: 1.4)
-                            )
+                            .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.white.opacity(0.55), lineWidth: 1.4))
                             .shadow(color: .black.opacity(0.16), radius: 14, x: 0, y: 8)
 
-                        // موجة خفيفة بالأسفل
+                        // موجة خفيفة
                         WaveShape()
                             .fill(Color.white.opacity(0.10))
                             .frame(height: 120)
@@ -90,7 +85,7 @@ struct CardView: View {
                             .padding(.bottom, 6)
                             .alignBottom()
 
-                        // بسويها بعدين
+                        // زر "بسويها بعدين"
                         VStack {
                             HStack {
                                 Button(action: { skipWithFlipLike() }) {
@@ -108,18 +103,18 @@ struct CardView: View {
                             Spacer()
                         }
 
-                        // نص المهمة — يتبدّل بمكانه (بدون دخول من يمين/يسار)
+                        // نص المهمة
                         Text(task)
                             .font(.title3.weight(.bold))
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 22)
                             .id(taskKey)
-                            .opacity(1 - 0.7 * (1 - (abs(0.5 - flipPhase) * 2)))// تلاشي حول المنتصف
-                            .rotation3DEffect(.degrees(-tiltDegrees), axis: (x: 0, y: 1, z: 0)) // مضاد الميلان للنص
+                            .opacity(1 - 0.7 * (1 - (abs(0.5 - flipPhase) * 2)))
+                            .rotation3DEffect(.degrees(-tiltDegrees), axis: (x: 0, y: 1, z: 0))
                             .animation(.easeInOut(duration: 0.35), value: taskKey)
 
-                        // تم
+                        // زر "تم"
                         VStack {
                             Spacer()
                             HStack {
@@ -141,12 +136,23 @@ struct CardView: View {
                     .rotation3DEffect(.degrees(tiltDegrees), axis: (x: 0, y: 1, z: 0))
                     .scaleEffect(scale)
                     .animation(.easeInOut(duration: 0.35), value: flipPhase)
+                } else {
+                    // حالة لا توجد مهام
+                    VStack(spacing: 8) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                        Text("لا توجد مهام لهذه الفئة بعد")
+                            .foregroundStyle(.white.opacity(0.95))
+                    }
                 }
 
                 Spacer(minLength: 24)
             }
         }
         .onAppear { setupToday() }
+        .navigationBarBackButtonHidden(true)      // نخفي Back الافتراضي
+        .toolbar(.hidden, for: .navigationBar)    // نخفي شريط العنوان الافتراضي
     }
 
     // MARK: - Logic
@@ -156,27 +162,32 @@ struct CardView: View {
     }
 
     private func setupToday() {
-        todaysTasks = Array(allTasks.shuffled().prefix(dailyLimit))
+        let pool = allTasksForCategory
+        guard !pool.isEmpty else {
+            todaysTasks = []; currentIndex = 0; completed = 0
+            taskKey = .init(); flipPhase = 0
+            return
+        }
+        let count = min(dailyLimit, pool.count)
+        todaysTasks = Array(pool.shuffled().prefix(count))
         currentIndex = 0
         completed = 0
         taskKey = .init()
         flipPhase = 0
     }
 
-    // أنيميشن “شِمّة فليب”: ننفّذ تغيير البيانات بنصّ الحركة
     private func runFlipLikeAnimation(halfAction: @escaping () -> Void) {
         let total = 0.35
         withAnimation(.easeInOut(duration: total)) { flipPhase = 1 }
         DispatchQueue.main.asyncAfter(deadline: .now() + total/2) {
             halfAction()
-            taskKey = .init() // يبدّل النص في منتصف الحركة
+            taskKey = .init()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + total) {
             flipPhase = 0
         }
     }
 
-    /// بسويها بعدين: رجّع المهمة لآخر اليوم بدون زيادة التقدم
     private func skipWithFlipLike() {
         guard !todaysTasks.isEmpty else { return }
         runFlipLikeAnimation {
@@ -186,7 +197,6 @@ struct CardView: View {
         }
     }
 
-    /// تم: زِد التقدّم واحذف المهمة الحالية
     private func completeCurrent() {
         guard !todaysTasks.isEmpty, completed < dailyLimit else { return }
         runFlipLikeAnimation {
@@ -228,38 +238,33 @@ struct CardView: View {
     }
 }
 
-//
 // MARK: - Progress Row (خط واحد متصل) + حركة القطة
-//
 private struct ProgressRowSolid: View {
-    let completed: Int          // 0..(totalSteps-1)
-    let totalSteps: Int         // 5
+    let completed: Int
+    let totalSteps: Int
     let bowlImageName: String
     let catImageName: String
 
-    // ثوابت سهلة التعديل
-    private let foodSize: CGFloat   = 50     // حجم الصحن يسار
-    private let catSize: CGFloat    = 60     // حجم القطة
-    private let trackWidth: CGFloat = 300    // طول المسار
-    private let trackHeight: CGFloat = 12    // سماكة المسار
-    private let rowHeight: CGFloat  = 44     // ارتفاع الحاوية
+    private let foodSize: CGFloat   = 50
+    private let catSize: CGFloat    = 60
+    private let trackWidth: CGFloat = 300
+    private let trackHeight: CGFloat = 12
+    private let rowHeight: CGFloat  = 44
 
     var body: some View {
         HStack(spacing: 12) {
-            // الصحن يسار
             imageOrSystem(named: bowlImageName, fallback: "takeoutbag.and.cup.and.straw.fill")
                 .frame(width: foodSize, height: foodSize)
 
             ZStack {
-                // خط واحد متصل (كبسولة طويلة)
                 Capsule()
                     .strokeBorder(Color.white.opacity(0.75), lineWidth: 2)
                     .frame(width: trackWidth, height: trackHeight)
 
-                // تعبئة الجزء المنجز (يمين → يسار)
                 let progress = CGFloat(min(max(completed, 0), totalSteps - 1)) / CGFloat(max(totalSteps - 1, 1))
-                let filledWidth = progress * (trackWidth - trackHeight) + trackHeight // حافظ على الحواف الدائرية
-                HStack { Spacer() } // لمحاذاة التعبئة من اليمين
+                let filledWidth = progress * (trackWidth - trackHeight) + trackHeight
+
+                HStack { Spacer() }
                     .background(
                         Capsule()
                             .fill(Color.white.opacity(0.9))
@@ -268,10 +273,9 @@ private struct ProgressRowSolid: View {
                     )
                     .frame(width: trackWidth, height: trackHeight)
 
-                // القطة: مركزها يمشي من يمين المسار إلى يساره
                 let startX = trackWidth - trackHeight/2
-                let endX   = trackHeight/2
                 let catCenterXInRow = startX - progress * (trackWidth - trackHeight)
+
                 Image(uiImage: UIImage(named: catImageName) ?? UIImage())
                     .resizable()
                     .scaledToFit()
@@ -321,5 +325,3 @@ private extension View {
         self.frame(maxHeight: .infinity, alignment: .bottom)
     }
 }
-
-#Preview { CardView() }
