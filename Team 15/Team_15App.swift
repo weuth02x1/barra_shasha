@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
-
 @main
 struct Team_15App: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashView()
         }
     }
 }
