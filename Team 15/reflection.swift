@@ -20,6 +20,9 @@ import SwiftUI
       //  let b = Double(rgb & 0xFF) / 255.0
        // self.init(red: r, green: g, blue: b)
    // }
+
+
+
 // ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
 struct reflectionView: View { // ~ لأن الملف اسمه jojoView ☆ 📁 ♡ ~
     @State private var moveRight = false // state for title movement 🌧️

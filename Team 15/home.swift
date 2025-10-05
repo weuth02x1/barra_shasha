@@ -25,7 +25,7 @@ struct homeView: View {
                 VStack(spacing: 28) {
                     // اختيار الشخصية (اختياري)
                     VStack(spacing: 10) {
-                        Text("اختر شخصيتك:")
+                        Text("انقر لاختيار شخصيتك:")
                             .font(.custom("Playpen_Bold", size: 20))
                             .foregroundColor(.white)
 
@@ -157,7 +157,7 @@ struct homeView: View {
                     )
                 )
                 .cornerRadius(30)
-                .overlay(RoundedRectangle(cornerRadius: 30).stroke(Color.white.opacity(0.3), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 30).stroke(Color.white.opacity(0.3), lineWidth: 3))
         }
     }
 
@@ -166,7 +166,7 @@ struct homeView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             overlayBounce = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             overlayBounce = false
             withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
                 showCharacterPicker = false

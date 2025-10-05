@@ -36,7 +36,7 @@ struct VideoPlayerView: UIViewRepresentable {
     }
 }
 
-// شاشة ثانية (مثال)
+// شاشة ثانية
 struct FriendView: View {
     var body: some View {
         VStack {
@@ -47,16 +47,18 @@ struct FriendView: View {
             Text("هنا يكمل التطبيق ✨")
                 .foregroundColor(.gray)
         }
+        .navigationTitle("FriendView")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-// شاشة البداية (Splash)
+// شاشة البداية
 struct celeb: View {
     private let player: AVPlayer = {
         let url = Bundle.main.url(forResource: "cat", withExtension: "mov")!
         let player = AVPlayer(url: url)
 
-        // تكرار الفيديو (loop)
+        // تكرار الفيديو
         NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: player.currentItem,
@@ -74,14 +76,12 @@ struct celeb: View {
         NavigationStack {
             ZStack {
                 secondaryColor.ignoresSafeArea()
-
                 Image("Imagem")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
 
                 VStack(spacing: 20) {
-                    // الجملة فوق الفيديو
                     Text("ياي 🎉 انجزت مهامك!")
                         .font(.title2)
                         .bold()
@@ -96,8 +96,8 @@ struct celeb: View {
                         )
                         .shadow(color: .black.opacity(0.3), radius: 8)
 
-                    // زر متابعة بتأثير زجاجي
-                    NavigationLink(destination: FriendView()) {
+                    // زر متابعة
+                    NavigationLink(destination: reflectionView()) {
                         glassyButton("متابعة", width: 200)
                     }
                     .padding(.top, 20)
@@ -123,11 +123,12 @@ struct celeb: View {
             .cornerRadius(30)
             .overlay(
                 RoundedRectangle(cornerRadius: 30)
-                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.3), lineWidth: 3)
             )
     }
 }
 
 #Preview {
-   celeb()
+    celeb()
 }
+
