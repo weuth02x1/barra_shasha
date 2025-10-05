@@ -26,9 +26,10 @@ struct CardView: View {
     @State private var currentIndex: Int = 0
     @State private var completed: Int = 0
 
-    // مفاتيح الأنيميشن لحركة “شِمّة فليب”
-    @State private var taskKey: UUID = .init()
-    @State private var flipPhase: Double = 0 // 0 → 1 → 0
+    // فليب 3D واضح—يشتغل فقط عند الضغط على "تم"
+    @State private var flipAngle: Double = 0
+    @State private var isFlipping: Bool = false
+    @State private var frontText: String = ""   // يظهر قبل 90°
 
     var body: some View {
         ZStack {
@@ -56,7 +57,7 @@ struct CardView: View {
                     .font(.headline.weight(.bold))
                     .foregroundStyle(.white.opacity(0.95))
 
-                // شريط المسار + القطة
+                // شريط المسار + القطة (رصاصي)
                 ProgressRowSolid(
                     completed: completed,
                     totalSteps: dailyLimit,
@@ -68,10 +69,8 @@ struct CardView: View {
 
                 // الكارد
                 if let task = currentTask {
-                    let tiltDegrees = sin(flipPhase * .pi) * 12
-                    let scale = 1 - 0.02 * sin(flipPhase * .pi)
-
                     ZStack {
+                        // خلفية الكارد
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .fill(.ultraThinMaterial)
                             .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.white.opacity(0.55), lineWidth: 1.4))
@@ -85,10 +84,28 @@ struct CardView: View {
                             .padding(.bottom, 6)
                             .alignBottom()
 
-                        // زر "بسويها بعدين"
+                        // المحتوى الأمامي (قبل التبديل)
+                        Text(frontText)
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 22)
+                            .opacity(flipAngle < 90 ? 1 : 0)
+                            .rotation3DEffect(.degrees(flipAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
+
+                        // المحتوى الخلفي (بعد التبديل)
+                        Text(task)
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 22)
+                            .opacity(flipAngle >= 90 ? 1 : 0)
+                            .rotation3DEffect(.degrees(flipAngle - 180), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
+
+                        // زر "بسويها بعدين" (بدون فليب)
                         VStack {
                             HStack {
-                                Button(action: { skipWithFlipLike() }) {
+                                Button(action: { skipNoFlip() }) {
                                     Text("بسويها بعدين")
                                         .font(.body.weight(.semibold))
                                         .foregroundStyle(.white)
@@ -97,29 +114,19 @@ struct CardView: View {
                                         .background(Color.white.opacity(0.18))
                                         .clipShape(Capsule())
                                 }
+                                .disabled(isFlipping)
                                 Spacer()
                             }
                             .padding(14)
                             Spacer()
                         }
 
-                        // نص المهمة
-                        Text(task)
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 22)
-                            .id(taskKey)
-                            .opacity(1 - 0.7 * (1 - (abs(0.5 - flipPhase) * 2)))
-                            .rotation3DEffect(.degrees(-tiltDegrees), axis: (x: 0, y: 1, z: 0))
-                            .animation(.easeInOut(duration: 0.35), value: taskKey)
-
-                        // زر "تم"
+                        // زر "تم" (يفعل الفليب فقط)
                         VStack {
                             Spacer()
                             HStack {
                                 Spacer()
-                                Button(action: { completeCurrent() }) {
+                                Button(action: { completeWithFlip() }) {
                                     Text("تم")
                                         .font(.body.weight(.semibold))
                                         .foregroundStyle(.white)
@@ -128,14 +135,12 @@ struct CardView: View {
                                         .background(Color.white.opacity(0.20))
                                         .clipShape(Capsule())
                                 }
+                                .disabled(isFlipping)
                                 .padding(12)
                             }
                         }
                     }
                     .frame(width: 300, height: 380)
-                    .rotation3DEffect(.degrees(tiltDegrees), axis: (x: 0, y: 1, z: 0))
-                    .scaleEffect(scale)
-                    .animation(.easeInOut(duration: 0.35), value: flipPhase)
                 } else {
                     // حالة لا توجد مهام
                     VStack(spacing: 8) {
@@ -165,46 +170,63 @@ struct CardView: View {
         let pool = allTasksForCategory
         guard !pool.isEmpty else {
             todaysTasks = []; currentIndex = 0; completed = 0
-            taskKey = .init(); flipPhase = 0
+            frontText = ""
             return
         }
         let count = min(dailyLimit, pool.count)
         todaysTasks = Array(pool.shuffled().prefix(count))
         currentIndex = 0
         completed = 0
-        taskKey = .init()
-        flipPhase = 0
+        frontText = todaysTasks.first ?? ""
     }
 
-    private func runFlipLikeAnimation(halfAction: @escaping () -> Void) {
-        let total = 0.35
-        withAnimation(.easeInOut(duration: total)) { flipPhase = 1 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + total/2) {
+    // فليب أنيق (يُستدعى فقط عند "تم")
+    private func runFlipAnimation(halfAction: @escaping () -> Void) {
+        guard !isFlipping else { return }
+        isFlipping = true
+        frontText = currentTask ?? ""
+
+        // 0 → 90 (إخفاء الأمامي)
+        withAnimation(.easeInOut(duration: 0.22)) {
+            flipAngle = 90
+        }
+
+        // بدّل المهمة عند 90°
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
             halfAction()
-            taskKey = .init()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + total) {
-            flipPhase = 0
+
+            // 90 → 180 (إظهار الخلفي)
+            withAnimation(.easeInOut(duration: 0.22)) {
+                flipAngle = 180
+            }
+
+            // رجّع الزاوية للصفر للتجهيز للفليب التالي
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                flipAngle = 0
+                frontText = currentTask ?? ""
+                isFlipping = false
+            }
         }
     }
 
-    private func skipWithFlipLike() {
-        guard !todaysTasks.isEmpty else { return }
-        runFlipLikeAnimation {
-            let skipped = todaysTasks.remove(at: currentIndex)
-            todaysTasks.append(skipped)
-            if currentIndex >= todaysTasks.count { currentIndex = 0 }
-        }
-    }
-
-    private func completeCurrent() {
+    // "تم" → فليب + تقدم
+    private func completeWithFlip() {
         guard !todaysTasks.isEmpty, completed < dailyLimit else { return }
-        runFlipLikeAnimation {
+        runFlipAnimation {
             completed += 1
             todaysTasks.remove(at: currentIndex)
             if todaysTasks.isEmpty { return }
             if currentIndex >= todaysTasks.count { currentIndex = 0 }
         }
+    }
+
+    // "بسويها بعدين" → بدون فليب (فقط تدوير القائمة)
+    private func skipNoFlip() {
+        guard !todaysTasks.isEmpty, !isFlipping else { return }
+        let skipped = todaysTasks.remove(at: currentIndex)
+        todaysTasks.append(skipped)
+        if currentIndex >= todaysTasks.count { currentIndex = 0 }
+        frontText = currentTask ?? ""
     }
 
     // MARK: - Top buttons helpers
@@ -238,7 +260,7 @@ struct CardView: View {
     }
 }
 
-// MARK: - Progress Row (خط واحد متصل) + حركة القطة
+// MARK: - Progress Row (رصاصي + قطة أسرع)
 private struct ProgressRowSolid: View {
     let completed: Int
     let totalSteps: Int
@@ -257,22 +279,27 @@ private struct ProgressRowSolid: View {
                 .frame(width: foodSize, height: foodSize)
 
             ZStack {
+                // إطار المسار — رصاصي
                 Capsule()
-                    .strokeBorder(Color.white.opacity(0.75), lineWidth: 2)
+                    .strokeBorder(Color.gray.opacity(0.40), lineWidth: 2)
                     .frame(width: trackWidth, height: trackHeight)
 
+                // التقدّم الحالي
                 let progress = CGFloat(min(max(completed, 0), totalSteps - 1)) / CGFloat(max(totalSteps - 1, 1))
                 let filledWidth = progress * (trackWidth - trackHeight) + trackHeight
 
+                // تعبئة المسار — رصاصي وأبطأ
                 HStack { Spacer() }
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.9))
+                            .fill(Color.gray.opacity(0.30))
                             .frame(width: filledWidth, height: trackHeight)
                             .frame(maxWidth: .infinity, alignment: .trailing)
+                            .animation(.easeInOut(duration: 0.6), value: completed)
                     )
                     .frame(width: trackWidth, height: trackHeight)
 
+                // موضع القطة — أسرع
                 let startX = trackWidth - trackHeight/2
                 let catCenterXInRow = startX - progress * (trackWidth - trackHeight)
 
@@ -281,7 +308,7 @@ private struct ProgressRowSolid: View {
                     .scaledToFit()
                     .frame(width: catSize, height: catSize)
                     .position(x: catCenterXInRow, y: rowHeight/2)
-                    .animation(.easeInOut(duration: 0.25), value: completed)
+                    .animation(.easeOut(duration: 0.20), value: completed)
             }
             .frame(width: trackWidth, height: rowHeight)
 
@@ -316,7 +343,7 @@ struct WaveShape: Shape {
         p.addLine(to: CGPoint(x: rect.width, y: h))
         p.addLine(to: CGPoint(x: 0, y: h))
         p.closeSubpath()
-        return p
+        return p;
     }
 }
 

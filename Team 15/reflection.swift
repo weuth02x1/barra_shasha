@@ -1,116 +1,111 @@
-//
-//  reflection.swift
-//  Team 15
-//
-//  Created by aljawharah alowayridhi on 10/04/1447 AH.
-//
-//  jojoView.swift
-//  Created by aljawharah alowayridhi on 07/04/1447 AH.
-// ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
 import SwiftUI
-// Extension لدعم Hex 🥝 🍭 ↓
-// extension Color {
-   // init(hex: String) {
-       // let scanner = Scanner(string: hex)
-       // _ = scanner.scanString("#")
-       // var rgb: UInt64 = 0
-      //  scanner.scanHexInt64(&rgb)
-      //  let r = Double((rgb >> 16) & 0xFF) / 255.0
-       // let g = Double((rgb >> 8) & 0xFF) / 255.0
-      //  let b = Double(rgb & 0xFF) / 255.0
-       // self.init(red: r, green: g, blue: b)
-   // }
 
+// MARK: - Color helper
+@inline(__always)
+func colorHex(_ hex: String) -> Color {
+    var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+    if s.hasPrefix("#") { s.removeFirst() }
+    var rgb: UInt64 = 0
+    Scanner(string: s).scanHexInt64(&rgb)
+    let r = Double((rgb >> 16) & 0xFF) / 255.0
+    let g = Double((rgb >> 8) & 0xFF) / 255.0
+    let b = Double(rgb & 0xFF) / 255.0
+    return Color(red: r, green: g, blue: b)
+}
 
+// MARK: - Reflection View
+struct reflectionView: View {
+    @State private var moveRight = false
+    @State private var pulseFeeling = false
 
-// ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
-struct reflectionView: View { // ~ لأن الملف اسمه jojoView ☆ 📁 ♡ ~
-    @State private var moveRight = false // state for title movement 🌧️
-    @State private var pulseFeelingText = false   // جديد: تأثير النص
-    
-    // ↓ state for select mode with emojis 🌱💧 ↓
-    @State private var selected1 = false
-    @State private var selected2 = false
-    @State private var selected3 = false
+    // اختصار: مؤشر عنصر مختار بدل 3 بوليانات
+    @State private var selectedIndex: Int? = nil
+
     var body: some View {
         ZStack {
-            Color(hex: "#81CCBB") // لون الخلفيه 🍦⭐️
-                .ignoresSafeArea()
-            
-//               ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦
+            // خلفية اللون
+            colorHex("#81CCBB").ignoresSafeArea()
 
+            // خلفية صورة شفافة (لو ما كانت موجودة ما ينهار التطبيق؛ بتكون بس شفافة)
             Image("الخلفيه")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-// ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
+                .opacity(0.15)
+
             VStack(spacing: 40) {
+
+                // عنوان "وش شعورك؟" كصورة مع أنيميشن هادي
                 Image("وش شعورك")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 150, height: 80)
+                    .frame(width: 180, height: 90)
                     .shadow(radius: 2)
                     .offset(x: moveRight ? 20 : -20)
-                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true),
-                               value: moveRight)
+                    .scaleEffect(pulseFeeling ? 1.05 : 0.95)
+                    .opacity(pulseFeeling ? 1.0 : 0.65) // 0...1 فقط
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: moveRight)
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: pulseFeeling)
                     .onAppear {
-                        moveRight.toggle() // اضيف انميشن لسؤال ✧✨⭒
+                        moveRight.toggle()
+                        pulseFeeling = true
                     }
 
-                // 💕👇 هنا النص مع تأثير in-out ↓
-                    .font(.system(size: 22, weight: .semibold))
-                    
-                    .opacity(pulseFeelingText ? 3.0 : 0.55)
-                // ★✮الشفافيه★✮
-                
-                    .scaleEffect(pulseFeelingText ? 1.05 : 0.95)
-                // ☆ يكبر ويصغر ☆
-                
-                    .animation(.easeInOut(duration: 2)
-                                .repeatForever(autoreverses: true),
-                               value: pulseFeelingText)
-                    .onAppear { pulseFeelingText = true }
-// ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
-                HStack(spacing: 50) {
-                            HStack(spacing: 50) {
-                                emojiButton(index: 0, emoji: "😊", title: "افضل", isSelected: $selected1)
-                                    .shadow(radius: 2)
-                                emojiButton(index: 1, emoji: "😐", title: "عادي", isSelected: $selected2)
-                                    .shadow(radius: 2)
-                                emojiButton(index: 2, emoji: "😔", title: "اسوأ", isSelected: $selected3)
-                                    .shadow(radius: 2)
-                            }
-                        }
-                    }
-
+                // الأزرار: توزيع متساوي وبدون قصّ للنصوص
+                HStack {
+                    Spacer()
+                    EmojiButton(index: 0, emoji: "😊", title: "أفضل",    selectedIndex: $selectedIndex)
+                    Spacer()
+                    EmojiButton(index: 1, emoji: "😐", title: "نفس الشي", selectedIndex: $selectedIndex)
+                    Spacer()
+                    EmojiButton(index: 2, emoji: "😔", title: "أسوأ",    selectedIndex: $selectedIndex)
+                    Spacer()
                 }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 16)
             }
+            .padding(.top, 20)
         }
+    }
+}
 
-// زر الايموجي ↓ 🌈 🐱
-struct emojiButton: View {
+// MARK: - Emoji Button component
+struct EmojiButton: View {
     let index: Int
     let emoji: String
     let title: String
-    @Binding var isSelected: Bool
+    @Binding var selectedIndex: Int?
+
+    var isSelected: Bool { selectedIndex == index }
 
     var body: some View {
         VStack(spacing: 8) {
             Text(emoji)
-                .font(.system(size: 40))
-                .opacity(isSelected ? 1.0 : 0.5) // مثال على تغيير الشكل
-                .onTapGesture {
-                    isSelected.toggle() // هنا يصير التبديل
-                }
-            Image(title)
-                .font(.caption)
+                .font(.system(size: 42))
+                .opacity(isSelected ? 1.0 : 0.8)
+
+            // مهم: Text وليس Image(title)
+            Text(title)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.95))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity)
         }
-    }
-}
-// ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        reflectionView()
+        .frame(width: 90)                      // مساحة كافية لظهور العنوان
+        .contentShape(Rectangle())             // منطقة لمس أوسع
+        .onTapGesture { selectedIndex = index }
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isSelected ? .white.opacity(0.35) : .clear, lineWidth: 1)
+        )
     }
 }
 
+// MARK: - Preview
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        reflectionView()
+            .previewDevice("iPhone 16 Pro")
+    }
+}
