@@ -1,4 +1,26 @@
 import SwiftUI
+import AVFoundation
+
+// MARK: - Sound Manager (Fixes SwiftUI Audio Cut-Off)
+class SoundManager {
+    static let shared = SoundManager()
+    private var player: AVAudioPlayer?
+
+    func playClick() {
+        guard let url = Bundle.main.url(forResource: "click", withExtension: "wav") else {
+            print("⚠️ click.wav not found in bundle")
+            return
+        }
+
+        do {
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.prepareToPlay()
+            player?.play()
+        } catch {
+            print("⚠️ Error playing sound: \(error.localizedDescription)")
+        }
+    }
+}
 
 struct homeView: View {
     // مسار التنقّل
@@ -25,8 +47,8 @@ struct homeView: View {
                 VStack(spacing: 28) {
                     // اختيار الشخصية (اختياري)
                     VStack(spacing: 10) {
-                        Text("انقر لاختيار شخصيتك:")
-                            .font(.custom("Playpen_Bold", size: 20))
+                        Text("انقر لاختيار شخصيتك")
+                            .font(.custom("Beiruti-VariableFont_wght", size: 20))
                             .foregroundColor(.white)
 
                         Image(selectedCharacter)
@@ -34,6 +56,7 @@ struct homeView: View {
                             .scaledToFit()
                             .frame(width: 200, height: 200)
                             .onTapGesture {
+                               // SoundManager.shared.playClick()
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                     showCharacterPicker = true
                                     overlayBounce = true
@@ -49,6 +72,7 @@ struct homeView: View {
                         Text("اختر اهتمامك:")
                             .font(.custom("Playpen", size: 20))
                             .foregroundColor(.white)
+                            .padding()
 
                         HStack(spacing: 10) {
                             glassyButton("ادبيات")   { go("ادبيات") }
@@ -68,7 +92,10 @@ struct homeView: View {
                     ZStack {
                         Color.black.opacity(0.6)
                             .ignoresSafeArea()
-                            .onTapGesture { closeOverlayWithBounce() }
+                            .onTapGesture {
+                                SoundManager.shared.playClick()
+                                closeOverlayWithBounce()
+                            }
 
                         VStack(spacing: 20) {
                             HStack(spacing: 20) {
@@ -91,6 +118,7 @@ struct homeView: View {
                                         .scaleEffect(tappedCharacter == index ? 1.1 : 1.0)
                                         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: tappedCharacter)
                                         .onTapGesture {
+                                            SoundManager.shared.playClick()
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                                 tappedCharacter = index
                                             }
@@ -135,6 +163,7 @@ struct homeView: View {
 
     // MARK: - Actions
     private func go(_ category: String) {
+        SoundManager.shared.playClick()
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             selectedButton = category
         }

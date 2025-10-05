@@ -5,6 +5,7 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>Playpen.ttf</string>
+		<string>Beiruti-VariableFont_wght.ttf</string>
 		<string>Playpen_Bold.ttf</string>
 	</array>
 </dict>
