@@ -11,6 +11,7 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
+            
             ZStack {
                 AppTheme.primaryColor.ignoresSafeArea()
 
@@ -123,8 +124,16 @@ struct HomeView: View {
                     }
                 }
             }
+            // إخفاء الباك والشريط من الشاشة الرئيسية
+            .navigationBarBackButtonHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
+
+            // MARK: - الانتقال للبطاقات
             .navigationDestination(for: String.self) { category in
                 CardView(category: category)
+                    // إخفاء الباك والشريط من الصفحات التالية أيضًا
+                    .navigationBarBackButtonHidden(true)
+                    .toolbar(.hidden, for: .navigationBar)
             }
         }
     }

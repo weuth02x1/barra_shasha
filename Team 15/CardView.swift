@@ -28,6 +28,9 @@ struct CardView: View {
     @State private var isFlipping: Bool = false
     @State private var frontText: String = ""
 
+    // ✅ تحكّم يدوي بمكان الكارد (القيمة السالبة ترفعه، الموجبة تنزّله)
+    @State private var cardOffsetY: CGFloat = -30
+
     var body: some View {
         ZStack {
             AppTheme.primaryColor
@@ -41,22 +44,26 @@ struct CardView: View {
                 )
 
             VStack(spacing: 20) {
-                // ✅ Added safe padding around everything
+                // الهيدر: سهم رجوع + العنوان + شريط التقدم
                 VStack(spacing: 16) {
-                    // شريط علوي (سهم + Home)
+                    // زر الرجوع
                     HStack {
-                        topButton(system: "chevron.backward") {
+                        Button {
                             SoundManager.shared.playClick()
                             dismiss()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(10)
+                                .background(Color.white.opacity(0.22))
+                                .clipShape(Circle())
+                                .shadow(radius: 2)
                         }
-
                         Spacer()
-
-                        // topButtonImage(name: homeImageName) {
-                        //     SoundManager.shared.playClick()
-                        //     dismiss()
-                        // }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
 
                     // العناوين
                     VStack(spacing: 4) {
@@ -81,7 +88,7 @@ struct CardView: View {
 
                 Spacer()
 
-                // ✅ الكارد (المهام)
+                // الكارد (المهام)
                 if let task = currentTask {
                     ZStack {
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -125,44 +132,37 @@ struct CardView: View {
                                 perspective: 0.55
                             )
 
+                        // ✅ زر "بسويها بعدين" رجعناه فوق الكارد
+                        VStack {
+                            HStack {
+                                GlassyButton(title: "بسويها بعدين", width: 150, action: {
+                                    SoundManager.shared.playClick()
+                                    skipNoFlip()
+                                })
+                                .font(.system(size: 15, weight: .semibold))
+                                Spacer()
+                            }
+                            .padding(20)
+                            Spacer()
+                        }
+
                         // ✅ الزر السفلي "تم"
                         VStack {
                             Spacer()
                             HStack {
                                 Spacer()
-                                GlassyButton(title: "تم", width: 120) {
+                                GlassyButton(title: "تم", width: 110, action: {
                                     SoundManager.shared.playClick()
                                     completeWithFlip()
-                                }
+                                })
+                                .font(.system(size: 15, weight: .semibold))
                             }
                             .padding(20)
-                        }
-
-                        // ✅ الزر العلوي "بسويها بعدين"
-                        VStack {
-                            HStack {
-                                GlassyButton(title: "بسويها بعدين", width: 160) {
-                                    SoundManager.shared.playClick()
-                                    skipNoFlip()
-                                }
-                                Spacer()
-                            }
-                            .padding(20)
-                            Spacer()
                         }
                     }
                     .frame(width: 320, height: 400)
                     .padding(.horizontal, 24)
-                } else {
-                    // حالة لا توجد مهام
-                    VStack(spacing: 8) {
-                        Image(systemName: "tray")
-                            .font(.system(size: 28, weight: .semibold))
-                            .foregroundColor(.white)
-                        Text("لا توجد مهام لهذه الفئة بعد")
-                            .foregroundColor(.white)
-                    }
-                    .padding(.horizontal, 24)
+                    .offset(y: cardOffsetY) // 👈 تحكم المكان من هنا
                 }
 
                 Spacer(minLength: 40)
@@ -201,15 +201,11 @@ struct CardView: View {
         isFlipping = true
         frontText = currentTask ?? ""
 
-        withAnimation(.easeInOut(duration: 0.22)) {
-            flipAngle = 90
-        }
+        withAnimation(.easeInOut(duration: 0.22)) { flipAngle = 90 }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
             halfAction()
-            withAnimation(.easeInOut(duration: 0.22)) {
-                flipAngle = 180
-            }
+            withAnimation(.easeInOut(duration: 0.22)) { flipAngle = 180 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
                 flipAngle = 0
                 frontText = currentTask ?? ""
@@ -220,7 +216,6 @@ struct CardView: View {
 
     private func completeWithFlip() {
         guard !todaysTasks.isEmpty, completed < dailyLimit else { return }
-
         runFlipAnimation {
             completed += 1
             todaysTasks.remove(at: currentIndex)
@@ -237,51 +232,9 @@ struct CardView: View {
         if currentIndex >= todaysTasks.count { currentIndex = 0 }
         frontText = currentTask ?? ""
     }
-
-    // MARK: - Top buttons (now themed)
-    private func topButton(system: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: system)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white.opacity(0.25))
-                )
-                .padding(50)
-        }
-    }
-
-    private func topButtonImage(name: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            imageOrSystem(named: name, fallback: "house.fill")
-                .frame(width: 24, height: 24)
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white.opacity(0.25))
-                )
-        }
-    }
-
-    private func imageOrSystem(named: String, fallback: String) -> some View {
-        Group {
-            if UIImage(named: named) != nil {
-                Image(named)
-                    .resizable()
-                    .scaledToFit()
-            } else {
-                Image(systemName: fallback)
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundColor(.white)
-            }
-        }
-    }
 }
 
-// MARK: - Progress Row (رصاصي + قطة أسرع)
+// MARK: - Progress Row
 private struct ProgressRowSolid: View {
     let completed: Int
     let totalSteps: Int
@@ -299,19 +252,15 @@ private struct ProgressRowSolid: View {
         HStack(spacing: 12) {
             imageOrSystem(named: bowlImageName, fallback: "takeoutbag.and.cup.and.straw.fill")
                 .frame(width: foodSize, height: foodSize)
-                //.padding(.leading,50)
-
+                .offset(x: 10) // ← السالب يحرّكه يسار، الموجب يحرّكه يمين
             ZStack {
-                // إطار المسار — رصاصي
                 Capsule()
                     .strokeBorder(Color.white.opacity(0.60), lineWidth: 2)
                     .frame(width: trackWidth, height: trackHeight)
 
-                // التقدّم الحالي
                 let progress = CGFloat(min(max(completed, 0), totalSteps - 1)) / CGFloat(max(totalSteps - 1, 1))
                 let filledWidth = progress * (trackWidth - trackHeight) + trackHeight
 
-                // تعبئة المسار — رصاصي وأبطأ
                 HStack { Spacer() }
                     .background(
                         Capsule()
@@ -322,7 +271,6 @@ private struct ProgressRowSolid: View {
                     )
                     .frame(width: trackWidth, height: trackHeight)
 
-                // موضع القطة — أسرع
                 let startX = trackWidth - trackHeight / 2
                 let catCenterXInRow = startX - progress * (trackWidth - trackHeight)
                 Image(uiImage: UIImage(named: catImageName) ?? UIImage())
