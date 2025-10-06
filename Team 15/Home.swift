@@ -2,12 +2,12 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var path = NavigationPath()
     @State private var selectedCharacter = "character1"
     @State private var showCharacterPicker = false
     @State private var tappedCharacter: Int? = nil
     @State private var overlayBounce = false
     @State private var selectedButton: String? = nil
+    @State private var path = [Destination]()
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -56,6 +56,12 @@ struct HomeView: View {
                     }
                 }
                 .padding()
+                .navigationDestination(for: Destination.self) { destination in
+                       switch destination {
+                       case .card(let category, let character):
+                           CardView(category: category, selectedCharacterImageName: character)
+                       }
+                   }
 
                 // MARK: - Character Picker Overlay
                 if showCharacterPicker {
@@ -137,14 +143,19 @@ struct HomeView: View {
             }
         }
     }
+    enum Destination: Hashable {
+        case card(category: String, character: String)
+    }
 
+    @State private var path = [Destination]()
+    
     // MARK: - Navigation
     private func go(_ category: String) {
         SoundManager.shared.playClick()
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             selectedButton = category
         }
-        path.append(category)
+        path.append(.card(category: category, character: selectedCharacter))
     }
 
     // MARK: - Overlay Close Animation

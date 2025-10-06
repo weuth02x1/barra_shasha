@@ -7,6 +7,8 @@
 		<dict/>
 	</array>
 	<key>UIAppFonts</key>
-	<array/>
+	<array>
+		<string>Playpen.ttf</string>
+	</array>
 </dict>
 </plist>
