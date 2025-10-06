@@ -8,9 +8,7 @@
 import SwiftUI
 import AVKit
 
-private let secondaryColor = Color(red: 146/255, green: 227/255, blue: 213/255)
-
-// UIViewRepresentable لعرض الفيديو
+// شاشة عرض الفيديو
 struct VideoPlayerView: UIViewRepresentable {
     let player: AVPlayer
 
@@ -36,7 +34,7 @@ struct VideoPlayerView: UIViewRepresentable {
     }
 }
 
-// شاشة ثانية
+// شاشة ثانية (مثال)
 struct FriendView: View {
     var body: some View {
         VStack {
@@ -52,7 +50,7 @@ struct FriendView: View {
     }
 }
 
-// شاشة البداية
+// MARK: - شاشة البداية
 struct celeb: View {
     private let player: AVPlayer = {
         let url = Bundle.main.url(forResource: "cat", withExtension: "mov")!
@@ -75,7 +73,7 @@ struct celeb: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                secondaryColor.ignoresSafeArea()
+                AppTheme.secondaryColor.ignoresSafeArea()
                 Image("Imagem")
                     .resizable()
                     .scaledToFill()
@@ -92,43 +90,23 @@ struct celeb: View {
                         .frame(width: 250, height: 250)
                         .overlay(
                             RoundedRectangle(cornerRadius: 30)
-                                .stroke(secondaryColor, lineWidth: 1.5)
+                                .stroke(AppTheme.secondaryColor, lineWidth: 1.5)
                         )
                         .shadow(color: .black.opacity(0.3), radius: 8)
 
-                    // زر متابعة
+                    // ✅ استخدم الزر من Theme.swift
                     NavigationLink(destination: reflectionView()) {
-                        glassyButton("متابعة", width: 200)
+                        GlassyButton(title: "متابعة", width: 200) {
+                            SoundManager.shared.playClick()
+                        }
                     }
                     .padding(.top, 20)
                 }
             }
         }
     }
-
-    // دالة الزر الزجاجي
-    private func glassyButton(_ title: String, width: CGFloat = 150) -> some View {
-        Text(title)
-            .font(.custom("Playpen", size: 25))
-            .foregroundColor(.white)
-            .frame(width: width, height: 50)
-            .background(
-                RadialGradient(
-                    gradient: Gradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0)]),
-                    center: .topLeading,
-                    startRadius: 0,
-                    endRadius: 100
-                )
-            )
-            .cornerRadius(30)
-            .overlay(
-                RoundedRectangle(cornerRadius: 30)
-                    .stroke(Color.white.opacity(0.3), lineWidth: 3)
-            )
-    }
 }
 
 #Preview {
     celeb()
 }
-

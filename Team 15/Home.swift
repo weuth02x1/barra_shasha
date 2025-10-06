@@ -1,54 +1,24 @@
+// HomeView.swift
 import SwiftUI
-import AVFoundation
 
-// MARK: - Sound Manager (Fixes SwiftUI Audio Cut-Off)
-class SoundManager {
-    static let shared = SoundManager()
-    private var player: AVAudioPlayer?
-
-    func playClick() {
-        guard let url = Bundle.main.url(forResource: "click", withExtension: "wav") else {
-            print("⚠️ click.wav not found in bundle")
-            return
-        }
-
-        do {
-            player = try AVAudioPlayer(contentsOf: url)
-            player?.prepareToPlay()
-            player?.play()
-        } catch {
-            print("⚠️ Error playing sound: \(error.localizedDescription)")
-        }
-    }
-}
-
-struct homeView: View {
-    // مسار التنقّل
+struct HomeView: View {
     @State private var path = NavigationPath()
-
-    // حالة اختيار الشخصية (لو حابة تبقينها)
     @State private var selectedCharacter = "character1"
     @State private var showCharacterPicker = false
     @State private var tappedCharacter: Int? = nil
     @State private var overlayBounce = false
-
-    // تمييز الزر
     @State private var selectedButton: String? = nil
-
-    // ألوانك
-    private let primaryColor = Color(red: 129/255, green: 204/255, blue: 187/255)
-    private let secondaryColor = Color(red: 146/255, green: 227/255, blue: 213/255)
 
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
-                primaryColor.ignoresSafeArea()
+                AppTheme.primaryColor.ignoresSafeArea()
 
                 VStack(spacing: 28) {
-                    // اختيار الشخصية (اختياري)
+                    // MARK: - Character Picker Section
                     VStack(spacing: 10) {
                         Text("انقر لاختيار شخصيتك")
-                            .font(.custom("Beiruti-VariableFont_wght", size: 20))
+                            .font(AppTheme.beiruti(size: 20))
                             .foregroundColor(.white)
 
                         Image(selectedCharacter)
@@ -56,7 +26,6 @@ struct homeView: View {
                             .scaledToFit()
                             .frame(width: 200, height: 200)
                             .onTapGesture {
-                               // SoundManager.shared.playClick()
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                     showCharacterPicker = true
                                     overlayBounce = true
@@ -67,27 +36,27 @@ struct homeView: View {
                             }
                     }
 
-                    // اختيار الاهتمام
+                    // MARK: - Interest Buttons
                     VStack(spacing: 10) {
                         Text("اختر اهتمامك:")
-                            .font(.custom("Playpen", size: 20))
+                            .font(AppTheme.playpen(size: 20))
                             .foregroundColor(.white)
                             .padding()
 
                         HStack(spacing: 10) {
-                            glassyButton("ادبيات")   { go("ادبيات") }
-                            glassyButton("فنونيات")  { go("فنونيات") }
+                            GlassyButton(title: "ادبيات") { go("ادبيات") }
+                            GlassyButton(title: "فنونيات") { go("فنونيات") }
                         }
                         HStack(spacing: 10) {
-                            glassyButton("مطبخيات") { go("مطبخيات") }
-                            glassyButton("مغامرات") { go("مغامرات") }
+                            GlassyButton(title: "مطبخيات") { go("مطبخيات") }
+                            GlassyButton(title: "مغامرات") { go("مغامرات") }
                         }
-                        glassyButton("عشوائيات", width: 310) { go("عشوائيات") }
+                        GlassyButton(title: "عشوائيات", width: 310) { go("عشوائيات") }
                     }
                 }
                 .padding()
 
-                // Overlay تبع اختيار الشخصية (اختياري)
+                // MARK: - Character Picker Overlay
                 if showCharacterPicker {
                     ZStack {
                         Color.black.opacity(0.6)
@@ -107,8 +76,8 @@ struct homeView: View {
                                         .background(
                                             RadialGradient(
                                                 gradient: Gradient(colors: tappedCharacter == index
-                                                                   ? [Color.white.opacity(0.5), primaryColor.opacity(0)]
-                                                                   : [Color.clear, Color.white.opacity(0.2)]),
+                                                    ? [Color.white.opacity(0.5), AppTheme.primaryColor.opacity(0)]
+                                                    : [Color.clear, Color.white.opacity(0.2)]),
                                                 center: .center,
                                                 startRadius: 0,
                                                 endRadius: 80
@@ -138,8 +107,8 @@ struct homeView: View {
                             RadialGradient(
                                 gradient: Gradient(stops: [
                                     .init(color: Color.white, location: 0.0001),
-                                    .init(color: secondaryColor.opacity(0.8), location: 1.5),
-                                    .init(color: primaryColor, location: 1.0)
+                                    .init(color: AppTheme.secondaryColor.opacity(0.8), location: 1.5),
+                                    .init(color: AppTheme.primaryColor, location: 1.0)
                                 ]),
                                 center: .topLeading,
                                 startRadius: 0,
@@ -154,43 +123,22 @@ struct homeView: View {
                     }
                 }
             }
-            // وجهة التنقل: نمرر اسم الفئة كـ String
             .navigationDestination(for: String.self) { category in
                 CardView(category: category)
             }
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Navigation
     private func go(_ category: String) {
         SoundManager.shared.playClick()
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             selectedButton = category
         }
-        path.append(category) // يفتح CardView(category: ...)
+        path.append(category)
     }
 
-    // زر زجاجي يقبل أكشن
-    private func glassyButton(_ title: String, width: CGFloat = 150, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.custom("Playpen_Bold", size: 20))
-                .foregroundColor(.white)
-                .frame(width: width, height: 50)
-                .background(
-                    RadialGradient(
-                        gradient: Gradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0)]),
-                        center: .topLeading,
-                        startRadius: 0,
-                        endRadius: 100
-                    )
-                )
-                .cornerRadius(30)
-                .overlay(RoundedRectangle(cornerRadius: 30).stroke(Color.white.opacity(0.3), lineWidth: 3))
-        }
-    }
-
-    // Overlay dismiss
+    // MARK: - Overlay Close Animation
     private func closeOverlayWithBounce() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             overlayBounce = true
@@ -204,5 +152,6 @@ struct homeView: View {
     }
 }
 
-// نقطة الدخول لو حابة
-#Preview { homeView() }
+#Preview {
+    HomeView()
+}

@@ -47,7 +47,7 @@ struct SplashView: View {
 
             // ← الانتقال لصفحة الهوم (اختيار الشخصية)
             .navigationDestination(isPresented: $navigateToHome) {
-                homeView()    // إذا اسمك HomeView غيّريها إلى HomeView()
+                HomeView()    // إذا اسمك HomeView غيّريها إلى HomeView()
             }
         }
     }
